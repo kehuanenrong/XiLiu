@@ -1,0 +1,270 @@
+/* ===== 彩蛋页面样式 ===== */
+
+/* Tab 切换 */
+.egg-tabs {
+  display: flex;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.egg-tab {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-full);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+}
+
+.egg-tab:hover {
+  background: rgba(108, 92, 231, 0.1);
+  color: var(--color-primary);
+}
+
+.egg-tab.active {
+  background: var(--gradient-primary);
+  color: white;
+}
+
+.egg-content {
+  min-height: 300px;
+}
+
+/* ===== 表情包画廊 ===== */
+.egg-meme-upload {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.egg-meme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--space-md);
+}
+
+.egg-meme-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform var(--transition-fast);
+}
+
+.egg-meme-item:hover {
+  transform: scale(1.05);
+}
+
+.egg-meme-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.egg-meme-del {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  background: rgba(214, 48, 49, 0.85);
+  color: white;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.egg-meme-item:hover .egg-meme-del {
+  opacity: 1;
+}
+
+/* ===== 每日金句 ===== */
+.egg-verse {
+  text-align: center;
+  padding: var(--space-xl) 0;
+}
+
+.egg-verse-icon {
+  font-size: 4rem;
+  margin-bottom: var(--space-md);
+}
+
+.egg-verse-result {
+  margin: var(--space-lg) 0;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-md);
+}
+
+.egg-verse-text {
+  font-size: 1.15rem;
+  color: var(--text-primary);
+  line-height: 1.9;
+  max-width: 480px;
+  margin-bottom: var(--space-md);
+  font-style: italic;
+}
+
+.egg-verse-ref {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* ===== 打地鼠游戏 ===== */
+.egg-game {
+  text-align: center;
+}
+
+.egg-game-header {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-xl);
+  margin-bottom: var(--space-lg);
+  font-size: 1.1rem;
+}
+
+.egg-game-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+  max-width: 300px;
+  margin: 0 auto var(--space-lg);
+}
+
+.egg-game-hole {
+  aspect-ratio: 1;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: 2px solid var(--border-color);
+}
+
+.egg-game-hole:hover {
+  border-color: var(--color-primary);
+}
+
+.egg-game-mole {
+  font-size: 2rem;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: all 0.15s ease;
+  pointer-events: none;
+}
+
+.egg-game-mole.active {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.egg-game-mole.whacked {
+  opacity: 0;
+  transform: scale(0.3) rotate(45deg);
+}
+
+/* ===== 撒花 ===== */
+.egg-confetti-page {
+  text-align: center;
+  padding: var(--space-xl) 0;
+}
+
+.egg-confetti-icon {
+  font-size: 4rem;
+  animation: hop 2s ease-in-out infinite;
+}
+
+.egg-confetti-btn {
+  font-size: 1.1rem;
+  padding: var(--space-md) var(--space-xl);
+}
+
+/* ===== 秘密留言板 ===== */
+.egg-secrets {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.egg-secret-input {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+}
+
+.emoji-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.emoji-option {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: all var(--transition-fast);
+  border: 2px solid transparent;
+}
+
+.emoji-option:hover {
+  background: rgba(108, 92, 231, 0.1);
+  transform: scale(1.2);
+}
+
+.emoji-option.selected {
+  border-color: var(--color-primary);
+  background: rgba(108, 92, 231, 0.1);
+}
+
+.egg-secret-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.egg-secret-msg {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+}
+
+.egg-secret-emoji {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.egg-secret-text {
+  flex: 1;
+  word-break: break-word;
+}
+
+.egg-secret-time {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}

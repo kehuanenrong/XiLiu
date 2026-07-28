@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xiliu - abundant life</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/easteregg.css">
+</head>
+<body>
+  <!-- 导航栏 -->
+  <nav class="navbar">
+    <div class="nav-brand-wrap">
+      <div class="nav-brand">🎨 Xiliu</div>
+      <input type="text" id="secretInput" class="nav-secret-input" placeholder="" maxlength="10" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="nav-links">
+      <a href="#home" class="nav-link active">首页</a>
+      <a href="#about" class="nav-link">关于我们</a>
+      <a href="#files" class="nav-link">文件中心</a>
+      <a href="#menu" class="nav-link">菜谱分享</a>
+    </div>
+    <div class="nav-actions">
+      <button id="themeToggle" class="btn-icon" title="切换主题">🌙</button>
+      <button class="nav-mobile-toggle" id="mobileToggle">☰</button>
+    </div>
+  </nav>
+
+  <!-- 主内容区 -->
+  <main>
+    <!-- 首页 -->
+    <section id="home" class="section hero-section">
+      <div class="hero-content">
+        <h1 class="hero-title">欢迎来到 <span class="gradient-text">Xiliu</span></h1>
+        <p class="hero-subtitle">一个朋友们的有趣分享空间 ✨</p>
+        <div class="hero-features">
+          <a href="#about" class="feature-card">
+            <span class="feature-icon">👥</span>
+            <span class="feature-text">关于我们</span>
+          </a>
+          <a href="#files" class="feature-card">
+            <span class="feature-icon">📁</span>
+            <span class="feature-text">文件中心</span>
+          </a>
+          <a href="#menu" class="feature-card">
+            <span class="feature-icon">🍳</span>
+            <span class="feature-text">菜谱分享</span>
+          </a>
+        </div>
+      </div>
+      <div class="hero-decoration">
+        <div class="floating-emoji">🎉</div>
+        <div class="floating-emoji">🎈</div>
+        <div class="floating-emoji">⭐</div>
+        <div class="floating-emoji">🌈</div>
+      </div>
+    </section>
+
+    <!-- 关于我们 -->
+    <section id="about" class="section">
+      <div class="section-header">
+        <h2>👥 关于我们</h2>
+        <p class="section-desc">认识一下这群有趣的灵魂</p>
+      </div>
+      <div id="teamGrid" class="team-grid">
+        <!-- JS 动态生成 -->
+      </div>
+      <div class="section-footer">
+        <button id="addMemberBtn" class="btn btn-primary">➕ 添加成员</button>
+      </div>
+    </section>
+
+    <!-- 文件中心 -->
+    <section id="files" class="section">
+      <div class="section-header">
+        <h2>📁 文件中心</h2>
+        <p class="section-desc">上传、预览、分享你的文件</p>
+      </div>
+      <div class="file-upload-area" id="dropZone">
+        <div class="upload-icon">📤</div>
+        <p>拖拽文件到这里，或 <label for="fileInput" class="upload-link">点击上传</label></p>
+        <input type="file" id="fileInput" multiple hidden>
+      </div>
+      <div class="file-toolbar" id="fileToolbar">
+        <div class="file-filters">
+          <button class="filter-tag active" data-type="all" onclick="FilesModule.filterByType('all')">全部</button>
+          <button class="filter-tag" data-type="image" onclick="FilesModule.filterByType('image')">🖼️ 图片</button>
+          <button class="filter-tag" data-type="video" onclick="FilesModule.filterByType('video')">🎬 视频</button>
+          <button class="filter-tag" data-type="audio" onclick="FilesModule.filterByType('audio')">🎵 音频</button>
+          <button class="filter-tag" data-type="doc" onclick="FilesModule.filterByType('doc')">📄 文档</button>
+          <button class="filter-tag" data-type="other" onclick="FilesModule.filterByType('other')">📦 其他</button>
+        </div>
+        <div class="file-count" id="fileCount"></div>
+      </div>
+      <div id="fileList" class="file-list"></div>
+      <div id="fileShowMore" class="show-more-wrap"></div>
+    </section>
+
+    <!-- 菜谱分享 -->
+    <section id="menu" class="section">
+      <div class="section-header">
+        <h2>🍳 菜谱分享</h2>
+        <p class="section-desc">分享你的拿手好菜</p>
+      </div>
+      <div class="menu-actions">
+        <button id="addRecipeBtn" class="btn btn-primary">📝 分享新菜谱</button>
+        <div class="menu-filter">
+          <input type="text" id="recipeSearch" placeholder="搜索菜谱..." class="search-input">
+        </div>
+      </div>
+      <div class="recipe-toolbar" id="recipeToolbar">
+        <div class="recipe-filters">
+          <button class="filter-tag active" data-cat="all" onclick="MenuModule.filterByCat('all')">全部</button>
+          <button class="filter-tag" data-cat="家常菜" onclick="MenuModule.filterByCat('家常菜')">🥘 家常菜</button>
+          <button class="filter-tag" data-cat="烘焙" onclick="MenuModule.filterByCat('烘焙')">🍰 烘焙</button>
+          <button class="filter-tag" data-cat="饮品" onclick="MenuModule.filterByCat('饮品')">🧋 饮品</button>
+          <button class="filter-tag" data-cat="小吃" onclick="MenuModule.filterByCat('小吃')">🍡 小吃</button>
+          <button class="filter-tag" data-cat="硬菜" onclick="MenuModule.filterByCat('硬菜')">🥩 硬菜</button>
+        </div>
+      </div>
+      <div id="recipeGrid" class="recipe-grid"></div>
+      <div id="recipeShowMore" class="show-more-wrap"></div>
+    </section>
+  </main>
+
+  <!-- 模态框容器 -->
+  <div id="modalOverlay" class="modal-overlay hidden">
+    <div id="modalContent" class="modal-content">
+      <!-- JS 动态填充 -->
+    </div>
+  </div>
+
+  <!-- Toast 提示 -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- 第三方库 -->
+  <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+
+  <!-- 脚本 -->
+  <script src="js/storage.js"></script>
+  <script src="js/about.js"></script>
+  <script src="js/files.js"></script>
+  <script src="js/menu.js"></script>
+  <script src="js/easteregg.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
