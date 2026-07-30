@@ -2,50 +2,12 @@
  * 菜谱分享模块
  */
 const MenuModule = {
-  STORAGE_KEY: 'xiliu_recipes',
+  API_BASE: '/api/recipes',
   currentFilter: 'all',
   currentSearch: '',
   showAll: false,
   defaultShow: 7,
-
-  defaultRecipes: [
-    {
-      id: '1',
-      title: '番茄炒蛋',
-      image: '',
-      category: '家常菜',
-      difficulty: 1,
-      time: '15分钟',
-      ingredients: ['番茄 2个', '鸡蛋 3个', '盐 适量', '糖 少许', '葱花 适量'],
-      steps: [
-        '番茄切块，鸡蛋打散加少许盐搅匀',
-        '热锅凉油，倒入蛋液炒至凝固盛出',
-        '锅中加油，放入番茄翻炒出汁',
-        '加入炒好的鸡蛋，加盐、糖调味',
-        '撒上葱花，出锅装盘'
-      ],
-      tips: '番茄要炒出汁才好吃，鸡蛋不要炒太老',
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: '2',
-      title: '可乐鸡翅',
-      image: '',
-      category: '家常菜',
-      difficulty: 2,
-      time: '30分钟',
-      ingredients: ['鸡翅中 8个', '可乐 1罐', '生抽 2勺', '老抽 1勺', '姜片 3片'],
-      steps: [
-        '鸡翅两面划刀，冷水下锅焯水去腥',
-        '热锅少油，放入鸡翅煎至两面金黄',
-        '加入姜片、生抽、老抽翻炒上色',
-        '倒入可乐，没过鸡翅，大火烧开',
-        '转小火收汁至浓稠即可'
-      ],
-      tips: '用普通可乐，不要用零度或无糖的',
-      createdAt: new Date().toISOString()
-    }
-  ],
+  recipesCache: [],
 
   init() {
     this.loadRecipes();
@@ -57,8 +19,22 @@ const MenuModule = {
     });
   },
 
+  async fetchRecipes() {
+    try {
+      const res = await fetch(this.API_BASE);
+      if (!res.ok) throw new Error('获取失败');
+      const recipes = await res.json();
+      this.recipesCache = recipes;
+      return recipes;
+    } catch (err) {
+      console.error('获取菜谱失败:', err);
+      App.toast('获取菜谱列表失败', 'error');
+      return this.recipesCache;
+    }
+  },
+
   getRecipes() {
-    return Storage.get(this.STORAGE_KEY, this.defaultRecipes);
+    return this.recipesCache;
   },
 
   filterByCat(cat) {
@@ -81,7 +57,8 @@ const MenuModule = {
     return recipes;
   },
 
-  loadRecipes() {
+  async loadRecipes() {
+    await this.fetchRecipes();
     this.renderRecipes();
   },
 
@@ -299,7 +276,7 @@ const MenuModule = {
     list.querySelectorAll('.step-number').forEach((el, i) => { el.textContent = i + 1; });
   },
 
-  handleAdd(e) {
+  async handleAdd(e) {
     e.preventDefault();
 
     const ingredients = Array.from(document.querySelectorAll('#ingredientList input'))
@@ -311,7 +288,6 @@ const MenuModule = {
     if (steps.length === 0) { App.toast('请至少添加一个步骤', 'error'); return; }
 
     const recipe = {
-      id: Storage.generateId(),
       title: document.getElementById('recipeTitle').value,
       category: document.getElementById('recipeCategory').value,
       difficulty: parseInt(document.getElementById('recipeDifficulty').value),
@@ -319,25 +295,39 @@ const MenuModule = {
       image: this._tempImage || '',
       ingredients,
       steps,
-      tips: document.getElementById('recipeTips').value,
-      createdAt: new Date().toISOString()
+      tips: document.getElementById('recipeTips').value
     };
 
-    const recipes = this.getRecipes();
-    recipes.unshift(recipe);
-    Storage.set(this.STORAGE_KEY, recipes);
-    this._tempImage = '';
-    this.loadRecipes();
-    App.closeModal();
-    App.toast('菜谱发布成功！🎉', 'success');
+    try {
+      const res = await fetch(this.API_BASE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(recipe)
+      });
+      if (!res.ok) throw new Error('添加失败');
+
+      this._tempImage = '';
+      await this.loadRecipes();
+      App.closeModal();
+      App.toast('菜谱发布成功！🎉', 'success');
+    } catch (err) {
+      console.error('添加菜谱失败:', err);
+      App.toast('发布失败，请重试', 'error');
+    }
   },
 
-  delete(id) {
+  async delete(id) {
     if (!confirm('确定要删除这个菜谱吗？')) return;
-    const recipes = this.getRecipes().filter(r => r.id !== id);
-    Storage.set(this.STORAGE_KEY, recipes);
-    this.loadRecipes();
-    App.closeModal();
-    App.toast('菜谱已删除', 'info');
+    try {
+      const res = await fetch(`${this.API_BASE}/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('删除失败');
+
+      await this.loadRecipes();
+      App.closeModal();
+      App.toast('菜谱已删除', 'info');
+    } catch (err) {
+      console.error('删除菜谱失败:', err);
+      App.toast('删除失败，请重试', 'error');
+    }
   }
 };

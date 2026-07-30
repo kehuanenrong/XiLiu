@@ -17,11 +17,55 @@ const UPLOAD_DIR = path.join(__dirname, 'uploads');
 const META_FILE = path.join(__dirname, 'data', 'files.json');
 const MEME_DIR = path.join(UPLOAD_DIR, 'memes');
 const MEME_META_FILE = path.join(__dirname, 'data', 'memes.json');
+const RECIPE_META_FILE = path.join(__dirname, 'data', 'recipes.json');
 
 // 确保目录存在
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 if (!fs.existsSync(path.dirname(META_FILE))) fs.mkdirSync(path.dirname(META_FILE), { recursive: true });
 if (!fs.existsSync(MEME_DIR)) fs.mkdirSync(MEME_DIR, { recursive: true });
+
+// 初始化菜谱数据文件（如果不存在）
+if (!fs.existsSync(RECIPE_META_FILE)) {
+  const defaultRecipes = [
+    {
+      id: 'default_1',
+      title: '番茄炒蛋',
+      image: '',
+      category: '家常菜',
+      difficulty: 1,
+      time: '15分钟',
+      ingredients: ['番茄 2个', '鸡蛋 3个', '盐 适量', '糖 少许', '葱花 适量'],
+      steps: [
+        '番茄切块，鸡蛋打散加少许盐搅匀',
+        '热锅凉油，倒入蛋液炒至凝固盛出',
+        '锅中加油，放入番茄翻炒出汁',
+        '加入炒好的鸡蛋，加盐、糖调味',
+        '撒上葱花，出锅装盘'
+      ],
+      tips: '番茄要炒出汁才好吃，鸡蛋不要炒太老',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'default_2',
+      title: '可乐鸡翅',
+      image: '',
+      category: '家常菜',
+      difficulty: 2,
+      time: '30分钟',
+      ingredients: ['鸡翅中 8个', '可乐 1罐', '生抽 2勺', '老抽 1勺', '姜片 3片'],
+      steps: [
+        '鸡翅两面划刀，冷水下锅焯水去腥',
+        '热锅少油，放入鸡翅煎至两面金黄',
+        '加入姜片、生抽、老抽翻炒上色',
+        '倒入可乐，没过鸡翅，大火烧开',
+        '转小火收汁至浓稠即可'
+      ],
+      tips: '用普通可乐，不要用零度或无糖的',
+      createdAt: new Date().toISOString()
+    }
+  ];
+  fs.writeFileSync(RECIPE_META_FILE, JSON.stringify(defaultRecipes, null, 2));
+}
 
 // 文件元数据读写
 function readMeta() {
@@ -46,6 +90,18 @@ function readMemeMeta() {
 
 function writeMemeMeta(data) {
   fs.writeFileSync(MEME_META_FILE, JSON.stringify(data, null, 2));
+}
+
+function readRecipeMeta() {
+  try {
+    return JSON.parse(fs.readFileSync(RECIPE_META_FILE, 'utf-8'));
+  } catch {
+    return [];
+  }
+}
+
+function writeRecipeMeta(data) {
+  fs.writeFileSync(RECIPE_META_FILE, JSON.stringify(data, null, 2));
 }
 
 // 生成短 ID
@@ -218,6 +274,44 @@ app.delete('/api/files/:id', (req, res) => {
 
   meta.splice(idx, 1);
   writeMeta(meta);
+
+  res.json({ success: true });
+});
+
+// ===== 菜谱 API =====
+
+// 菜谱列表
+app.get('/api/recipes', (req, res) => {
+  const recipes = readRecipeMeta();
+  res.json(recipes);
+});
+
+// 添加菜谱
+app.post('/api/recipes', (req, res) => {
+  const recipe = req.body;
+  if (!recipe || !recipe.title) {
+    return res.status(400).json({ error: '菜名不能为空' });
+  }
+
+  // 生成 ID
+  recipe.id = genId();
+  recipe.createdAt = new Date().toISOString();
+
+  const recipes = readRecipeMeta();
+  recipes.unshift(recipe);
+  writeRecipeMeta(recipes);
+
+  res.json(recipe);
+});
+
+// 删除菜谱
+app.delete('/api/recipes/:id', (req, res) => {
+  const recipes = readRecipeMeta();
+  const idx = recipes.findIndex(r => r.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: '菜谱不存在' });
+
+  recipes.splice(idx, 1);
+  writeRecipeMeta(recipes);
 
   res.json({ success: true });
 });
