@@ -1,6 +1,6 @@
 /**
  * 隐藏彩蛋模块
- * 触发方式：在 Logo 旁输入 "Xiliu"
+ * 触发方式：在 Logo 旁输入 "Xiliu" 打开秘密基地，输入 "App" 打开应用商店
  */
 const EasterEgg = {
   STORAGE_KEY_MEMES: 'xiliu_memes',
@@ -23,19 +23,29 @@ const EasterEgg = {
     if (!input) return;
 
     input.addEventListener('input', () => {
-      if (input.value.trim() === 'Xiliu') {
+      const val = input.value.trim();
+      if (val === 'XiLiu') {
         input.value = '';
         input.blur();
         this.unlock();
+      } else if (val.toLowerCase() === 'app') {
+        input.value = '';
+        input.blur();
+        this.openAppStore();
       }
     });
 
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
-        if (input.value.trim() === 'Xiliu') {
+        const val = input.value.trim();
+        if (val === 'XiLiu') {
           input.value = '';
           input.blur();
           this.unlock();
+        } else if (val.toLowerCase() === 'app') {
+          input.value = '';
+          input.blur();
+          this.openAppStore();
         }
       }
     });
@@ -59,6 +69,7 @@ const EasterEgg = {
         <button class="egg-tab" onclick="EasterEgg.switchTab('game')">🐹 打地鼠</button>
         <button class="egg-tab" onclick="EasterEgg.switchTab('confetti')">🎊 撒花</button>
         <button class="egg-tab" onclick="EasterEgg.switchTab('secrets')">💌 留言</button>
+        <button class="egg-tab" onclick="EasterEgg.switchTab('apps')">📦 应用商店</button>
       </div>
       <div id="eggContent" class="egg-content"></div>
     `);
@@ -68,7 +79,7 @@ const EasterEgg = {
 
   switchTab(tab) {
     document.querySelectorAll('.egg-tab').forEach((el, i) => {
-      el.classList.toggle('active', ['memes', 'verse', 'game', 'confetti', 'secrets'][i] === tab);
+      el.classList.toggle('active', ['memes', 'verse', 'game', 'confetti', 'secrets', 'apps'][i] === tab);
     });
     const content = document.getElementById('eggContent');
     switch (tab) {
@@ -80,6 +91,11 @@ const EasterEgg = {
       case 'game': content.innerHTML = this.renderGame(); break;
       case 'confetti': content.innerHTML = this.renderConfetti(); break;
       case 'secrets': content.innerHTML = this.renderSecrets(); break;
+      case 'apps':
+        content.innerHTML = this.renderApps();
+        AppStore.setupDropzone();
+        AppStore.loadApps();
+        break;
     }
   },
 
@@ -606,5 +622,302 @@ const EasterEgg = {
     Storage.set(this.STORAGE_KEY_MESSAGES, messages);
     this.switchTab('secrets');
     App.toast('秘密已发送 💌', 'success');
+  },
+
+  // ===== 应用商店 =====
+  renderApps() {
+    return `
+      <div class="egg-apps">
+        <div class="egg-app-upload">
+          <div class="egg-app-dropzone" id="appDropzone"
+               onclick="document.getElementById('appFileInput').click()">
+            <div class="egg-app-dropzone-icon">📱</div>
+            <div class="egg-app-dropzone-text">拖拽安装包到这里，或点击选择文件</div>
+            <div class="egg-app-dropzone-hint">支持安装包 (.apk .ipa .exe .msi .dmg .pkg) 及压缩包 (.zip .rar .7z .tar.gz .tgz) 等格式</div>
+          </div>
+          <input type="file" id="appFileInput" multiple hidden
+                 accept=".apk,.aab,.ipa,.exe,.msi,.dmg,.pkg,.deb,.AppImage,.rpm,.flatpak,.zip,.rar,.7z,.tar,.gz,.tgz,.zst,.xz"
+                 onchange="AppStore.handleUpload(event)">
+          <div class="egg-app-upload-progress" id="appUploadProgress">
+            <div class="egg-app-progress-bar">
+              <div class="egg-app-progress-fill" id="appProgressFill"></div>
+            </div>
+            <div class="egg-app-progress-text" id="appProgressText">上传中...</div>
+          </div>
+        </div>
+        <div class="egg-app-filters" id="appFilters">
+          <button class="egg-app-filter active" data-platform="all" onclick="AppStore.filterByPlatform('all', this)">全部</button>
+          <button class="egg-app-filter" data-platform="android" onclick="AppStore.filterByPlatform('android', this)">🤖 Android</button>
+          <button class="egg-app-filter" data-platform="ios" onclick="AppStore.filterByPlatform('ios', this)">🍎 iOS</button>
+          <button class="egg-app-filter" data-platform="windows" onclick="AppStore.filterByPlatform('windows', this)">🪟 Windows</button>
+          <button class="egg-app-filter" data-platform="mac" onclick="AppStore.filterByPlatform('mac', this)">💻 Mac</button>
+          <button class="egg-app-filter" data-platform="linux" onclick="AppStore.filterByPlatform('linux', this)">🐧 Linux</button>
+          <button class="egg-app-filter" data-platform="unknown" onclick="AppStore.filterByPlatform('unknown', this)">📦 通用</button>
+        </div>
+        <div class="egg-app-grid" id="appGrid">
+          <div class="egg-app-empty">
+            <div class="egg-app-empty-icon">📦</div>
+            <p>正在加载应用列表...</p>
+          </div>
+        </div>
+      </div>
+    `;
+  },
+
+  openAppStore() {
+    App.toast('📦 打开应用商店...', 'info');
+    setTimeout(() => {
+      App.showModal(`
+        <div class="modal-header">
+          <h3>📦 应用商店</h3>
+          <button class="modal-close" onclick="App.closeModal()">✕</button>
+        </div>
+        ${this.renderApps()}
+      `);
+      document.getElementById('modalContent').style.maxWidth = '650px';
+      AppStore.loadApps();
+      AppStore.setupDropzone();
+    }, 300);
+  }
+};
+
+/**
+ * 应用商店模块
+ * 管理应用安装包的上传、下载和删除
+ */
+const AppStore = {
+  allApps: [],
+  currentFilter: 'all',
+
+  PLATFORMS: {
+    android: { icon: '🤖', label: 'Android' },
+    ios:     { icon: '🍎', label: 'iOS' },
+    windows: { icon: '🪟', label: 'Windows' },
+    mac:     { icon: '💻', label: 'Mac' },
+    linux:   { icon: '🐧', label: 'Linux' },
+    unknown: { icon: '📦', label: '通用' }
+  },
+
+  // 根据文件扩展名识别平台
+  detectPlatform(filename) {
+    const lower = filename.toLowerCase();
+    // 处理复合扩展名 .tar.gz / .tar.bz2 等
+    if (lower.endsWith('.tar.gz') || lower.endsWith('.tgz')) return 'linux';
+    if (lower.endsWith('.tar.xz') || lower.endsWith('.tar.zst')) return 'linux';
+    const ext = lower.split('.').pop();
+    const map = {
+      apk: 'android', aab: 'android',
+      ipa: 'ios',
+      exe: 'windows', msi: 'windows',
+      dmg: 'mac', pkg: 'mac',
+      deb: 'linux', appimage: 'linux', rpm: 'linux', flatpak: 'linux',
+      zip: 'unknown', rar: 'unknown', '7z': 'unknown',
+      tar: 'unknown', gz: 'unknown', zst: 'unknown', xz: 'unknown'
+    };
+    return map[ext] || 'unknown';
+  },
+
+  // 获取平台信息
+  getPlatformInfo(platform) {
+    return this.PLATFORMS[platform] || this.PLATFORMS.unknown;
+  },
+
+  // 格式化文件大小
+  formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+  },
+
+  // 格式化时间
+  formatTime(iso) {
+    const d = new Date(iso);
+    const now = new Date();
+    const diff = now - d;
+    if (diff < 60000) return '刚刚';
+    if (diff < 3600000) return Math.floor(diff / 60000) + ' 分钟前';
+    if (diff < 86400000) return Math.floor(diff / 3600000) + ' 小时前';
+    if (diff < 604800000) return Math.floor(diff / 86400000) + ' 天前';
+    return d.toLocaleDateString('zh-CN');
+  },
+
+  // 设置拖拽上传
+  setupDropzone() {
+    const dropzone = document.getElementById('appDropzone');
+    if (!dropzone) return;
+
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('drag-over');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('drag-over');
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('drag-over');
+      const files = Array.from(e.dataTransfer.files);
+      if (files.length > 0) this.uploadFiles(files);
+    });
+  },
+
+  // 处理文件选择
+  handleUpload(e) {
+    const files = Array.from(e.target.files);
+    if (files.length > 0) this.uploadFiles(files);
+    if (e.target) e.target.value = '';
+  },
+
+  // 上传文件
+  async uploadFiles(files) {
+    const progressEl = document.getElementById('appUploadProgress');
+    const fillEl = document.getElementById('appProgressFill');
+    const textEl = document.getElementById('appProgressText');
+
+    if (progressEl) progressEl.classList.add('active');
+    if (fillEl) fillEl.style.width = '0%';
+    if (textEl) textEl.textContent = `正在上传 ${files.length} 个文件...`;
+
+    let completed = 0;
+    const total = files.length;
+
+    for (const file of files) {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const res = await fetch('api/files/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!res.ok) throw new Error('上传失败');
+
+        const record = await res.json();
+        // 添加平台信息到元数据
+        record.platform = this.detectPlatform(file.name);
+        this.allApps.unshift(record);
+      } catch (err) {
+        App.toast(`上传失败: ${file.name}`, 'error');
+      }
+
+      completed++;
+      const pct = Math.round((completed / total) * 100);
+      if (fillEl) fillEl.style.width = pct + '%';
+      if (textEl) textEl.textContent = `上传中... ${completed}/${total}`;
+    }
+
+    if (textEl) textEl.textContent = `上传完成！共 ${total} 个文件`;
+    setTimeout(() => {
+      if (progressEl) progressEl.classList.remove('active');
+    }, 2000);
+
+    this.renderList();
+    App.toast(`成功上传 ${total} 个应用！`, 'success');
+  },
+
+  // 加载应用列表
+  async loadApps() {
+    try {
+      const res = await fetch(`api/files?t=${Date.now()}`);
+      if (!res.ok) throw new Error('加载失败');
+      const files = await res.json();
+      // 过滤出安装包/压缩包类型的文件
+      const APP_EXTS = ['apk', 'aab', 'ipa', 'exe', 'msi', 'dmg', 'pkg', 'deb', 'appimage', 'rpm', 'flatpak', 'zip', 'rar', '7z', 'tar', 'gz', 'tgz', 'zst', 'xz'];
+      this.allApps = files.filter(f => {
+        const lower = f.name.toLowerCase();
+        if (lower.endsWith('.tar.gz') || lower.endsWith('.tar.xz') || lower.endsWith('.tar.zst')) return true;
+        const ext = lower.split('.').pop();
+        return APP_EXTS.includes(ext);
+      });
+      // 为每个应用添加平台信息
+      this.allApps.forEach(app => {
+        if (!app.platform) app.platform = this.detectPlatform(app.name);
+      });
+    } catch {
+      this.allApps = [];
+    }
+    this.renderList();
+  },
+
+  // 按平台筛选
+  filterByPlatform(platform, el) {
+    this.currentFilter = platform;
+    // 切换 active 状态
+    document.querySelectorAll('.egg-app-filter').forEach(btn => btn.classList.remove('active'));
+    if (el) el.classList.add('active');
+    this.renderList();
+  },
+
+  // 渲染应用列表
+  renderList() {
+    const grid = document.getElementById('appGrid');
+    if (!grid) return;
+
+    // 根据筛选条件过滤
+    const filtered = this.currentFilter === 'all'
+      ? this.allApps
+      : this.allApps.filter(a => a.platform === this.currentFilter);
+
+    if (filtered.length === 0) {
+      const hint = this.allApps.length === 0
+        ? '还没有应用，上传第一个吧！'
+        : `没有「${this.getPlatformInfo(this.currentFilter).label}」平台的应用`;
+      grid.innerHTML = `
+        <div class="egg-app-empty">
+          <div class="egg-app-empty-icon">📦</div>
+          <p>${hint}</p>
+        </div>
+      `;
+      return;
+    }
+
+    grid.innerHTML = filtered.map(app => this.renderCard(app)).join('');
+  },
+
+  // 渲染单个应用卡片
+  renderCard(app) {
+    const platform = this.getPlatformInfo(app.platform);
+    return `
+      <div class="egg-app-card animate-fade-in">
+        <div class="egg-app-icon">${platform.icon}</div>
+        <div class="egg-app-info">
+          <div class="egg-app-name" title="${app.name}">${app.name}</div>
+          <div class="egg-app-meta">
+            <span class="egg-app-platform ${app.platform}">${platform.icon} ${platform.label}</span>
+            <span>${this.formatSize(app.size)}</span>
+            <span>${this.formatTime(app.uploadedAt)}</span>
+          </div>
+        </div>
+        <div class="egg-app-actions">
+          <button class="btn btn-primary btn-sm" onclick="AppStore.download('${app.id}')" title="下载">⬇️</button>
+          <button class="btn btn-sm" onclick="AppStore.deleteApp('${app.id}', '${app.name.replace(/'/g, "\\'")}')" title="删除" style="color:var(--color-error, #d63031);">🗑️</button>
+        </div>
+      </div>
+    `;
+  },
+
+  // 下载应用
+  download(id) {
+    window.open(`api/files/${id}/download`, '_blank');
+  },
+
+  // 删除应用
+  async deleteApp(id, name) {
+    if (!confirm(`确定删除「${name}」？`)) return;
+
+    try {
+      const res = await fetch(`api/files/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('删除失败');
+
+      this.allApps = this.allApps.filter(a => a.id !== id);
+      this.renderList();
+      App.toast('已删除', 'info');
+    } catch {
+      App.toast('删除失败', 'error');
+    }
   }
 };

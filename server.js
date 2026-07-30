@@ -64,9 +64,11 @@ const storage = multer.diskStorage({
   }
 });
 
+const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB，支持应用安装包
+
 const upload = multer({
   storage,
-  limits: { fileSize: 50 * 1024 * 1024 }
+  limits: { fileSize: MAX_FILE_SIZE }
 });
 
 const memeStorage = multer.diskStorage({
@@ -229,7 +231,7 @@ app.get('*', (req, res) => {
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(413).json({ error: '文件过大，最大支持 50MB' });
+      return res.status(413).json({ error: '文件过大，最大支持 500MB' });
     }
     return res.status(400).json({ error: err.message || '上传失败' });
   }

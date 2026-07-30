@@ -268,3 +268,252 @@
   font-size: 0.75rem;
   white-space: nowrap;
 }
+
+/* ===== 应用商店 ===== */
+.egg-apps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.egg-app-upload {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.egg-app-dropzone {
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl) var(--space-lg);
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  background: var(--bg-secondary);
+}
+
+.egg-app-dropzone:hover {
+  border-color: var(--color-primary);
+  background: rgba(108, 92, 231, 0.05);
+}
+
+.egg-app-dropzone.drag-over {
+  border-color: var(--color-primary);
+  background: rgba(108, 92, 231, 0.1);
+  transform: scale(1.02);
+}
+
+.egg-app-dropzone-icon {
+  font-size: 2.5rem;
+  margin-bottom: var(--space-sm);
+  opacity: 0.8;
+}
+
+.egg-app-dropzone-text {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: var(--space-xs);
+}
+
+.egg-app-dropzone-hint {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.egg-app-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: var(--space-xs);
+}
+
+.egg-app-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  transition: all var(--transition-fast);
+  border: 1px solid transparent;
+}
+
+.egg-app-card:hover {
+  border-color: var(--border-color);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.egg-app-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  flex-shrink: 0;
+  border: 1px solid var(--border-color);
+}
+
+.egg-app-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.egg-app-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.egg-app-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.egg-app-platform {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.egg-app-platform.android {
+  background: rgba(0, 184, 148, 0.15);
+  color: #00b894;
+}
+
+.egg-app-platform.ios {
+  background: rgba(9, 132, 227, 0.15);
+  color: #0984e3;
+}
+
+.egg-app-platform.windows {
+  background: rgba(108, 92, 231, 0.15);
+  color: #6c5ce7;
+}
+
+.egg-app-platform.mac {
+  background: rgba(116, 118, 125, 0.15);
+  color: #74787d;
+}
+
+.egg-app-platform.linux {
+  background: rgba(225, 112, 85, 0.15);
+  color: #e17055;
+}
+
+.egg-app-platform.unknown {
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.egg-app-actions {
+  display: flex;
+  gap: var(--space-xs);
+  flex-shrink: 0;
+}
+
+.egg-app-actions .btn {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  border-radius: var(--radius-sm);
+}
+
+.egg-app-empty {
+  text-align: center;
+  padding: var(--space-xl) 0;
+  color: var(--text-secondary);
+}
+
+.egg-app-empty-icon {
+  font-size: 3rem;
+  margin-bottom: var(--space-md);
+  opacity: 0.6;
+}
+
+.egg-app-empty p {
+  font-size: 0.9rem;
+}
+
+.egg-app-upload-progress {
+  margin-top: var(--space-md);
+  display: none;
+}
+
+.egg-app-upload-progress.active {
+  display: block;
+}
+
+.egg-app-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.egg-app-progress-fill {
+  height: 100%;
+  background: var(--gradient-primary);
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+.egg-app-progress-text {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: var(--space-xs);
+  text-align: center;
+}
+
+/* 应用商店弹窗（独立入口） */
+.egg-apps-modal .modal-content {
+  max-width: 650px;
+}
+
+/* 应用分类筛选 */
+.egg-app-filters {
+  display: flex;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.egg-app-filter {
+  padding: 5px 14px;
+  border-radius: var(--radius-full);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.egg-app-filter:hover {
+  background: rgba(108, 92, 231, 0.1);
+  color: var(--color-primary);
+}
+
+.egg-app-filter.active {
+  background: var(--gradient-primary);
+  color: white;
+}
