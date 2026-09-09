@@ -6,7 +6,7 @@ const App = {
     this.setupTheme();
     this.setupNavigation();
     this.setupScrollEffects();
-    AboutModule.init();
+    NoticeModule.init();
     FilesModule.init();
     MenuModule.init();
     EasterEgg.init();
@@ -126,8 +126,8 @@ const App = {
       observer.observe(el);
     });
 
-    // 团队成员卡片
-    document.querySelectorAll('.member-card').forEach((el, i) => {
+    // 通知卡片
+    document.querySelectorAll('.notice-card').forEach((el, i) => {
       el.classList.add('scroll-reveal', `delay-${Math.min(i + 1, 6)}`);
       observer.observe(el);
     });
@@ -160,11 +160,11 @@ const App = {
 
   addSectionDecorations() {
     const decoData = {
-      about: [
+      notice: [
         { type: 'circle', color: 'rgba(108, 92, 231, 0.15)', size: 120, top: '10%', left: '5%', delay: '0s' },
         { type: 'circle', color: 'rgba(253, 121, 168, 0.12)', size: 80, top: '60%', right: '8%', delay: '2s' },
-        { type: 'emoji', content: '✨', top: '20%', right: '12%', delay: '1s' },
-        { type: 'emoji', content: '🚀', bottom: '15%', left: '10%', delay: '3s' },
+        { type: 'emoji', content: '📢', top: '20%', right: '12%', delay: '1s' },
+        { type: 'emoji', content: '🔔', bottom: '15%', left: '10%', delay: '3s' },
       ],
       files: [
         { type: 'circle', color: 'rgba(253, 203, 110, 0.12)', size: 100, top: '15%', right: '5%', delay: '1s' },

@@ -18,7 +18,7 @@
     </div>
     <div class="nav-links">
       <a href="#home" class="nav-link active">首页</a>
-      <a href="#about" class="nav-link">关于我们</a>
+      <a href="#notice" class="nav-link">信息通知</a>
       <a href="#files" class="nav-link">文件中心</a>
       <a href="#menu" class="nav-link">菜谱分享</a>
     </div>
@@ -36,9 +36,9 @@
         <h1 class="hero-title">欢迎来到 <span class="gradient-text">XiLiu</span></h1>
         <p class="hero-subtitle">一个朋友们的有趣分享空间 ✨</p>
         <div class="hero-features">
-          <a href="#about" class="feature-card">
-            <span class="feature-icon">👥</span>
-            <span class="feature-text">关于我们</span>
+          <a href="#notice" class="feature-card">
+            <span class="feature-icon">📢</span>
+            <span class="feature-text">信息通知</span>
           </a>
           <a href="#files" class="feature-card">
             <span class="feature-icon">📁</span>
@@ -58,17 +58,27 @@
       </div>
     </section>
 
-    <!-- 关于我们 -->
-    <section id="about" class="section">
+    <!-- 信息通知 -->
+    <section id="notice" class="section">
       <div class="section-header">
-        <h2>👥 关于我们</h2>
-        <p class="section-desc">认识一下这群有趣的灵魂</p>
+        <h2>📢 信息通知</h2>
+        <p class="section-desc">查看最新公告与重要通知</p>
       </div>
-      <div id="teamGrid" class="team-grid">
+      <div class="notice-toolbar">
+        <div class="notice-filters">
+          <button class="filter-tag active" data-type="all" onclick="NoticeModule.filterByType('all')">全部</button>
+          <button class="filter-tag" data-type="announcement" onclick="NoticeModule.filterByType('announcement')">📋 公告</button>
+          <button class="filter-tag" data-type="activity" onclick="NoticeModule.filterByType('activity')">🎉 活动</button>
+          <button class="filter-tag" data-type="reminder" onclick="NoticeModule.filterByType('reminder')">⏰ 提醒</button>
+          <button class="filter-tag" data-type="important" onclick="NoticeModule.filterByType('important')">❗ 重要</button>
+        </div>
+        <div class="notice-count" id="noticeCount"></div>
+      </div>
+      <div id="noticeList" class="notice-list">
         <!-- JS 动态生成 -->
       </div>
       <div class="section-footer">
-        <button id="addMemberBtn" class="btn btn-primary">➕ 添加成员</button>
+        <button id="addNoticeBtn" class="btn btn-primary">✏️ 发布通知</button>
       </div>
     </section>
 
@@ -141,7 +151,7 @@
 
   <!-- 脚本 -->
   <script src="js/storage.js"></script>
-  <script src="js/about.js"></script>
+  <script src="js/notice.js"></script>
   <script src="js/files.js"></script>
   <script src="js/menu.js"></script>
   <script src="js/easteregg.js"></script>

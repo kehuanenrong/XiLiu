@@ -18,6 +18,7 @@ const META_FILE = path.join(__dirname, 'data', 'files.json');
 const MEME_DIR = path.join(UPLOAD_DIR, 'memes');
 const MEME_META_FILE = path.join(__dirname, 'data', 'memes.json');
 const RECIPE_META_FILE = path.join(__dirname, 'data', 'recipes.json');
+const NOTICE_META_FILE = path.join(__dirname, 'data', 'notices.json');
 
 // 确保目录存在
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -102,6 +103,19 @@ function readRecipeMeta() {
 
 function writeRecipeMeta(data) {
   fs.writeFileSync(RECIPE_META_FILE, JSON.stringify(data, null, 2));
+}
+
+// 通知数据读写
+function readNoticeMeta() {
+  try {
+    return JSON.parse(fs.readFileSync(NOTICE_META_FILE, 'utf-8'));
+  } catch {
+    return [];
+  }
+}
+
+function writeNoticeMeta(data) {
+  fs.writeFileSync(NOTICE_META_FILE, JSON.stringify(data, null, 2));
 }
 
 // 生成短 ID
@@ -312,6 +326,57 @@ app.delete('/api/recipes/:id', (req, res) => {
 
   recipes.splice(idx, 1);
   writeRecipeMeta(recipes);
+
+  res.json({ success: true });
+});
+
+// ===== 通知 API =====
+
+// 通知列表
+app.get('/api/notices', (req, res) => {
+  const notices = readNoticeMeta();
+  res.json(notices);
+});
+
+// 发布通知
+app.post('/api/notices', (req, res) => {
+  const notice = req.body;
+  if (!notice || !notice.title || !notice.content) {
+    return res.status(400).json({ error: '标题和内容不能为空' });
+  }
+
+  // 生成 ID 和时间
+  notice.id = genId();
+  notice.time = new Date().toISOString();
+  notice.isRead = false;
+
+  const notices = readNoticeMeta();
+  notices.unshift(notice);
+  writeNoticeMeta(notices);
+
+  res.json(notice);
+});
+
+// 标记通知已读
+app.patch('/api/notices/:id/read', (req, res) => {
+  const notices = readNoticeMeta();
+  const notice = notices.find(n => n.id === req.params.id);
+  if (!notice) return res.status(404).json({ error: '通知不存在' });
+
+  notice.isRead = true;
+  writeNoticeMeta(notices);
+
+  res.json({ success: true });
+});
+
+// 删除通知
+app.delete('/api/notices/:id', (req, res) => {
+  const notices = readNoticeMeta();
+  const idx = notices.findIndex(n => n.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: '通知不存在' });
+
+  notices.splice(idx, 1);
+  writeNoticeMeta(notices);
 
   res.json({ success: true });
 });
