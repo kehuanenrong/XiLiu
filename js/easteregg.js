@@ -120,7 +120,7 @@ const EasterEgg = {
       const formData = new FormData();
       files.forEach(file => formData.append('files', file));
 
-      const res = await fetch('api/memes/upload', {
+      const res = await fetch('/api/memes/upload', {
         method: 'POST',
         body: formData
       });
@@ -216,7 +216,7 @@ const EasterEgg = {
     // 尝试从后端获取
     let meme;
     try {
-      const res = await fetch('api/memes');
+      const res = await fetch('/api/memes');
       if (!res.ok) throw new Error('加载失败');
       const memes = await res.json();
       meme = memes.find(m => m.id === id);
@@ -782,6 +782,7 @@ const AppStore = {
     if (textEl) textEl.textContent = `正在上传 ${files.length} 个文件...`;
 
     let completed = 0;
+    let successCount = 0;
     const total = files.length;
 
     for (const file of files) {
@@ -789,19 +790,24 @@ const AppStore = {
         const formData = new FormData();
         formData.append('file', file);
 
-        const res = await fetch('api/files/upload', {
+        const res = await fetch('/api/files/upload', {
           method: 'POST',
           body: formData
         });
 
-        if (!res.ok) throw new Error('上传失败');
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || '上传失败');
+        }
 
         const record = await res.json();
         // 添加平台信息到元数据
         record.platform = this.detectPlatform(file.name);
         this.allApps.unshift(record);
+        successCount++;
       } catch (err) {
-        App.toast(`上传失败: ${file.name}`, 'error');
+        console.error(`上传失败: ${file.name}`, err);
+        App.toast(`上传失败: ${file.name} (${err.message})`, 'error');
       }
 
       completed++;
@@ -810,13 +816,15 @@ const AppStore = {
       if (textEl) textEl.textContent = `上传中... ${completed}/${total}`;
     }
 
-    if (textEl) textEl.textContent = `上传完成！共 ${total} 个文件`;
+    if (textEl) textEl.textContent = `上传完成！成功 ${successCount}/${total} 个文件`;
     setTimeout(() => {
       if (progressEl) progressEl.classList.remove('active');
     }, 2000);
 
     this.renderList();
-    App.toast(`成功上传 ${total} 个应用！`, 'success');
+    if (successCount > 0) {
+      App.toast(`成功上传 ${successCount} 个应用！`, 'success');
+    }
   },
 
   // 加载应用列表
