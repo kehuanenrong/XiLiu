@@ -16,14 +16,17 @@ app.use(express.static(path.join(__dirname)));
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
 const META_FILE = path.join(__dirname, 'data', 'files.json');
 const MEME_DIR = path.join(UPLOAD_DIR, 'memes');
+const APP_DIR = path.join(UPLOAD_DIR, 'apps');
 const MEME_META_FILE = path.join(__dirname, 'data', 'memes.json');
 const RECIPE_META_FILE = path.join(__dirname, 'data', 'recipes.json');
 const NOTICE_META_FILE = path.join(__dirname, 'data', 'notices.json');
+const APP_META_FILE = path.join(__dirname, 'data', 'apps.json');
 
 // 确保目录存在
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 if (!fs.existsSync(path.dirname(META_FILE))) fs.mkdirSync(path.dirname(META_FILE), { recursive: true });
 if (!fs.existsSync(MEME_DIR)) fs.mkdirSync(MEME_DIR, { recursive: true });
+if (!fs.existsSync(APP_DIR)) fs.mkdirSync(APP_DIR, { recursive: true });
 
 // 初始化菜谱数据文件（如果不存在）
 if (!fs.existsSync(RECIPE_META_FILE)) {
@@ -118,6 +121,19 @@ function writeNoticeMeta(data) {
   fs.writeFileSync(NOTICE_META_FILE, JSON.stringify(data, null, 2));
 }
 
+// 应用数据读写
+function readAppMeta() {
+  try {
+    return JSON.parse(fs.readFileSync(APP_META_FILE, 'utf-8'));
+  } catch {
+    return [];
+  }
+}
+
+function writeAppMeta(data) {
+  fs.writeFileSync(APP_META_FILE, JSON.stringify(data, null, 2));
+}
+
 // 生成短 ID
 function genId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 6);
@@ -154,6 +170,21 @@ const memeStorage = multer.diskStorage({
 const memeUpload = multer({
   storage: memeStorage,
   limits: { fileSize: 50 * 1024 * 1024 }
+});
+
+// App 安装包存储配置
+const appStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, APP_DIR),
+  filename: (req, file, cb) => {
+    const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+    const ext = path.extname(originalName);
+    cb(null, `${genId()}${ext}`);
+  }
+});
+
+const appUpload = multer({
+  storage: appStorage,
+  limits: { fileSize: 500 * 1024 * 1024 } // 500MB
 });
 
 // 修复中文文件名编码
@@ -326,6 +357,66 @@ app.delete('/api/recipes/:id', (req, res) => {
 
   recipes.splice(idx, 1);
   writeRecipeMeta(recipes);
+
+  res.json({ success: true });
+});
+
+// ===== 应用商店 API =====
+
+// 应用列表
+app.get('/api/apps', (req, res) => {
+  const apps = readAppMeta();
+  res.json(apps);
+});
+
+// 上传应用
+app.post('/api/apps/upload', appUpload.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: '未选择文件' });
+
+  const originalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
+  const meta = readAppMeta();
+  const appRecord = {
+    id: genId(),
+    name: originalName,
+    size: req.file.size,
+    type: req.file.mimetype,
+    diskName: req.file.filename,
+    uploadedAt: new Date().toISOString()
+  };
+
+  meta.unshift(appRecord);
+  writeAppMeta(meta);
+
+  res.json(appRecord);
+});
+
+// 下载应用
+app.get('/api/apps/:id/download', (req, res) => {
+  const meta = readAppMeta();
+  const appItem = meta.find(a => a.id === req.params.id);
+  if (!appItem) return res.status(404).json({ error: '应用不存在' });
+
+  const filePath = path.join(APP_DIR, appItem.diskName);
+  if (!fs.existsSync(filePath)) return res.status(404).json({ error: '文件已丢失' });
+
+  const encodedName = encodeURIComponent(appItem.name);
+  res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodedName}`);
+  res.sendFile(filePath);
+});
+
+// 删除应用
+app.delete('/api/apps/:id', (req, res) => {
+  const meta = readAppMeta();
+  const idx = meta.findIndex(a => a.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: '应用不存在' });
+
+  const appItem = meta[idx];
+  const filePath = path.join(APP_DIR, appItem.diskName);
+
+  if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+  meta.splice(idx, 1);
+  writeAppMeta(meta);
 
   res.json({ success: true });
 });

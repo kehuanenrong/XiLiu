@@ -1,12 +1,22 @@
 /**
  * 文件中心模块 - 使用后端 API
+ * 注意：应用安装包类型文件已排除，由应用商店独立管理
  */
 const FilesModule = {
-  API_BASE: 'api/files',
+  API_BASE: '/api/files',
   allFiles: [],
   currentFilter: 'all',
   showAll: false,
   defaultShow: 7,
+
+  // 应用安装包扩展名列表（这些文件由应用商店管理）
+  APP_EXTENSIONS: [
+    'apk', 'aab', 'ipa',           // Android/iOS
+    'exe', 'msi',                   // Windows
+    'dmg', 'pkg',                   // macOS
+    'deb', 'appimage', 'rpm', 'flatpak',  // Linux
+    'tar', 'gz', 'tgz', 'tar.gz', 'tar.xz', 'tar.zst', 'zst', 'xz'  // 压缩包（可能包含安装包）
+  ],
 
   init() {
     this.setupDropZone();
@@ -57,10 +67,23 @@ const FilesModule = {
     }
   },
 
+  // 判断是否为应用安装包文件
+  isAppFile(filename) {
+    const lower = filename.toLowerCase();
+    // 处理复合扩展名
+    if (lower.endsWith('.tar.gz') || lower.endsWith('.tar.xz') || lower.endsWith('.tar.zst')) {
+      return true;
+    }
+    const ext = lower.split('.').pop();
+    return this.APP_EXTENSIONS.includes(ext);
+  },
+
   async loadFiles() {
     try {
       const res = await fetch(this.API_BASE);
-      this.allFiles = await res.json();
+      const allFiles = await res.json();
+      // 过滤掉应用安装包类型的文件
+      this.allFiles = allFiles.filter(f => !this.isAppFile(f.name));
       this.renderList();
     } catch {
       document.getElementById('fileList').innerHTML = `

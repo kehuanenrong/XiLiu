@@ -684,10 +684,12 @@ const EasterEgg = {
 /**
  * 应用商店模块
  * 管理应用安装包的上传、下载和删除
+ * 使用独立的 /api/apps 接口，与文件中心分离
  */
 const AppStore = {
   allApps: [],
   currentFilter: 'all',
+  API_BASE: '/api/apps',
 
   PLATFORMS: {
     android: { icon: '🤖', label: 'Android' },
@@ -701,7 +703,6 @@ const AppStore = {
   // 根据文件扩展名识别平台
   detectPlatform(filename) {
     const lower = filename.toLowerCase();
-    // 处理复合扩展名 .tar.gz / .tar.bz2 等
     if (lower.endsWith('.tar.gz') || lower.endsWith('.tgz')) return 'linux';
     if (lower.endsWith('.tar.xz') || lower.endsWith('.tar.zst')) return 'linux';
     const ext = lower.split('.').pop();
@@ -710,9 +711,7 @@ const AppStore = {
       ipa: 'ios',
       exe: 'windows', msi: 'windows',
       dmg: 'mac', pkg: 'mac',
-      deb: 'linux', appimage: 'linux', rpm: 'linux', flatpak: 'linux',
-      zip: 'unknown', rar: 'unknown', '7z': 'unknown',
-      tar: 'unknown', gz: 'unknown', zst: 'unknown', xz: 'unknown'
+      deb: 'linux', appimage: 'linux', rpm: 'linux', flatpak: 'linux'
     };
     return map[ext] || 'unknown';
   },
@@ -771,7 +770,7 @@ const AppStore = {
     if (e.target) e.target.value = '';
   },
 
-  // 上传文件
+  // 上传应用文件
   async uploadFiles(files) {
     const progressEl = document.getElementById('appUploadProgress');
     const fillEl = document.getElementById('appProgressFill');
@@ -790,7 +789,7 @@ const AppStore = {
         const formData = new FormData();
         formData.append('file', file);
 
-        const res = await fetch('/api/files/upload', {
+        const res = await fetch(`${this.API_BASE}/upload`, {
           method: 'POST',
           body: formData
         });
@@ -801,7 +800,6 @@ const AppStore = {
         }
 
         const record = await res.json();
-        // 添加平台信息到元数据
         record.platform = this.detectPlatform(file.name);
         this.allApps.unshift(record);
         successCount++;
@@ -830,21 +828,13 @@ const AppStore = {
   // 加载应用列表
   async loadApps() {
     try {
-      const res = await fetch(`api/files?t=${Date.now()}`);
+      const res = await fetch(`${this.API_BASE}?t=${Date.now()}`);
       if (!res.ok) throw new Error('加载失败');
-      const files = await res.json();
-      // 过滤出安装包/压缩包类型的文件
-      const APP_EXTS = ['apk', 'aab', 'ipa', 'exe', 'msi', 'dmg', 'pkg', 'deb', 'appimage', 'rpm', 'flatpak', 'zip', 'rar', '7z', 'tar', 'gz', 'tgz', 'zst', 'xz'];
-      this.allApps = files.filter(f => {
-        const lower = f.name.toLowerCase();
-        if (lower.endsWith('.tar.gz') || lower.endsWith('.tar.xz') || lower.endsWith('.tar.zst')) return true;
-        const ext = lower.split('.').pop();
-        return APP_EXTS.includes(ext);
-      });
-      // 为每个应用添加平台信息
-      this.allApps.forEach(app => {
-        if (!app.platform) app.platform = this.detectPlatform(app.name);
-      });
+      const apps = await res.json();
+      this.allApps = apps.map(app => ({
+        ...app,
+        platform: app.platform || this.detectPlatform(app.name)
+      }));
     } catch {
       this.allApps = [];
     }
@@ -854,7 +844,6 @@ const AppStore = {
   // 按平台筛选
   filterByPlatform(platform, el) {
     this.currentFilter = platform;
-    // 切换 active 状态
     document.querySelectorAll('.egg-app-filter').forEach(btn => btn.classList.remove('active'));
     if (el) el.classList.add('active');
     this.renderList();
@@ -865,7 +854,6 @@ const AppStore = {
     const grid = document.getElementById('appGrid');
     if (!grid) return;
 
-    // 根据筛选条件过滤
     const filtered = this.currentFilter === 'all'
       ? this.allApps
       : this.allApps.filter(a => a.platform === this.currentFilter);
@@ -893,7 +881,7 @@ const AppStore = {
       <div class="egg-app-card animate-fade-in">
         <div class="egg-app-icon">${platform.icon}</div>
         <div class="egg-app-info">
-          <div class="egg-app-name" title="${app.name}">${app.name}</div>
+          <div class="egg-app-name" title="${this.escapeHtml(app.name)}">${this.escapeHtml(app.name)}</div>
           <div class="egg-app-meta">
             <span class="egg-app-platform ${app.platform}">${platform.icon} ${platform.label}</span>
             <span>${this.formatSize(app.size)}</span>
@@ -902,7 +890,7 @@ const AppStore = {
         </div>
         <div class="egg-app-actions">
           <button class="btn btn-primary btn-sm" onclick="AppStore.download('${app.id}')" title="下载">⬇️</button>
-          <button class="btn btn-sm" onclick="AppStore.deleteApp('${app.id}', '${app.name.replace(/'/g, "\\'")}')" title="删除" style="color:var(--color-error, #d63031);">🗑️</button>
+          <button class="btn btn-sm" onclick="AppStore.deleteApp('${app.id}', '${this.escapeHtml(app.name).replace(/'/g, "\\'")}')" title="删除" style="color:var(--color-error, #d63031);">🗑️</button>
         </div>
       </div>
     `;
@@ -910,7 +898,7 @@ const AppStore = {
 
   // 下载应用
   download(id) {
-    window.open(`api/files/${id}/download`, '_blank');
+    window.open(`${this.API_BASE}/${id}/download`, '_blank');
   },
 
   // 删除应用
@@ -918,7 +906,7 @@ const AppStore = {
     if (!confirm(`确定删除「${name}」？`)) return;
 
     try {
-      const res = await fetch(`api/files/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${this.API_BASE}/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('删除失败');
 
       this.allApps = this.allApps.filter(a => a.id !== id);
@@ -927,5 +915,12 @@ const AppStore = {
     } catch {
       App.toast('删除失败', 'error');
     }
+  },
+
+  // HTML 转义
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 };
